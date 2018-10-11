@@ -1,0 +1,137 @@
+{% extends 'base.html' %} {% block main %} {% load static %} {% load ehcofilter %}
+<div class="column is-12">
+    <section class="hero is-primary is-smaill">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    捐赠榜：
+                </h1>
+                <h2 class="subtitle">
+                    有你们的支持,才让这里继续下去 谢谢！
+                </h2>
+            </div>
+        </div>
+    </section>
+</div>
+<div class="column is-12">
+    <div class="tile is-ancestor">
+        <div class="tile is-5 is-vertical is-parent">
+            {% if alipay == True %}
+            <div class="tile box is-child">
+                <p class="subtitle">充值捐赠系统正在内测中...
+                    <br>请在下方输入
+                    <strong>充值/捐赠金额</strong>
+                </p>
+                <p>点击提交会弹出
+                    <strong>支付宝二维码</strong>
+                    <br>扫描二维码确认付款之后
+                    <br>账户里会增加对应的金额</p>
+                <strong>付完款之后要按红色的确认按钮！</strong>
+                <hr>
+                <div class="content">
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input id="id-input-payinput" class="input" type="number" step="1" placeholder="最低不得小于1元: " required>
+                        </div>
+                        <div class="control">
+                            <button class="button is-outlined is-info" id="id-button-payrequest">提交</button>
+                        </div>
+                    </div>
+                    <div id="id-qrcode-box" class="is-hidden">
+                        <hr>
+                        <figure class="image">
+                            <img id="id-img-qrcode" src="">
+                        </figure>
+                        <p>
+                            <strong>付费完成之后请点击确认！</strong>
+                        </p>
+                        <p id='id-msg-line'></p>
+                        <div class="control">
+                            <button id="id-button-query" class="button is-outlined is-danger" href="#">确认</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="tile box is-child">
+                <p class="subtitle">本站通过充值码进行充值:</p>
+                <hr>
+                <p class="subtitle">扫描站长支付宝PY获得充值码：</p>
+                <figure class="image">
+                    <img src="{% static '/img/alipay.png'%}">
+                </figure>
+            </div>
+            {% endif %}
+        </div>
+        <div class="tile is-7 is-vertical is-parent">
+            <div class="tile box is-child">
+                <div class="content">
+                    <p class="subtitle">在充值界面充值也等同于捐赠，记录会自动同步</p>
+                    <table class="table is-striped">
+                        <thead>
+                            <tr>
+                                <th>捐赠人:</th>
+                                <th>捐赠金额:</th>
+                                <th>捐赠时间:</th>
+                            </tr>
+                        </thead>
+                        {% for donate in donatelist %}
+                        <tr>
+                            <td>{{ donate.user|mix_name:donate.user }}</td>
+                            <td>{{ donate.money }} 元</td>
+                            <td>{{ donate.time|date:"m月d日" }}：</td>
+                        </tr>
+                        {% empty %}
+                        <p class="subtitle">
+                            居然还没有人捐赠 要喝西北风了
+                        </p>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 支付请求 部分
+    var requestButton = $("#id-button-payrequest")
+    var payinput = $("#id-input-payinput")
+    var codeBox = $("#id-qrcode-box")
+    var msgline = $("#id-msg-line")
+    var payrequest = function () {
+        url = "{% url 'api:pay_request' %}"
+        paynum = payinput.val()
+        if (paynum >= 1 && paynum % 1 == 0) {
+            data = {
+                num: paynum,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            }
+            $.post(url, data, function (results) {
+                qrcode_url = "{% url 'sspanel:facepay_qrcode' %}"
+                codeBox.attr('class', '')
+                // // 获取当前域名
+                var host = window.location.host
+                var protocol = window.location.protocol
+                // 追加二维码图片
+                $("#id-img-qrcode").attr("src", `${protocol}//${host}/sspanel/facepay/qrcode/`)
+                info = results.info
+                swal(info.title, info.subtitle, info.status)
+                requestButton.attr("disabled", "disabled")
+            })
+        } else {
+            swal('错误！', '金额必须为整数且最少为一元', 'error')
+        }
+    }
+    requestButton.click(payrequest)
+    // 支付查询部分
+    queryButton = $("#id-button-query")
+    var payquery = function () {
+        msgline.html('后台飞速查询结果中 请稍候....')
+        url = "{% url 'api:pay_query' %}"
+        $.getJSON(url, function (results) {
+            info = results.info
+            swal(info.title, info.subtitle, info.status)
+        })
+    }
+    queryButton.click(payquery)
+</script> {% endblock main %}
