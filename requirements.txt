@@ -6,7 +6,7 @@ django-jet==1.0.7
 idna==2.6
 image==1.5.22
 Markdown==2.6.11
-Pillow==5.1.0
+Pillow==6.2.0
 python-alipay-sdk==1.2.1
 qrcode==6.0
 requests==2.18.4
